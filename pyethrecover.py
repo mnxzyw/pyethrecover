@@ -40,8 +40,8 @@ parser.add_argument('-t', '--threads',
 parser.add_argument("-v", "--verbose", action="count", default=0,
                     help="Be more verbose.")
 
-
 options = parser.parse_args(sys.argv[1:])
+
 
 def tryopen(f):
     try:
@@ -50,9 +50,10 @@ def tryopen(f):
         try:
             return json.loads(t)
         except:
-            raise Exception("Corrupted file: "+f)
+            raise Exception("Corrupted file: " + f)
     except:
         return None
+
 
 def list_passwords():
     if not options.pwfile:
@@ -60,23 +61,26 @@ def list_passwords():
     with open(options.pwfile) as f:
         return f.read().splitlines()
 
+
 class PasswordFoundException(Exception):
     pass
 
+
 def generate_all(el, tr):
     if el:
-        for j in xrange(len(el[0])):
+        for j in range(len(el[0])):
             for w in generate_all(el[1:], tr + el[0][j]):
                 yield w
     else:
         yield tr
 
+
 def attempt(w, pw, verbose):
-    if not isinstance(pw, basestring):
+    if not isinstance(pw, str):
         pw = ''.join(str(i) for i in pw)
 
     if verbose > 0:
-        print (pw)
+        print(pw)
 
     try:
         if 'encseed' in w:
@@ -93,6 +97,7 @@ def attempt(w, pw, verbose):
     except ValueError:
         return None
 
+
 def pwds():
     result = []
 
@@ -103,21 +108,22 @@ def pwds():
         result.extend(list_passwords())
 
     if options.pwsfile:
-        grammar = eval(file(options.pwsfile, 'r').read())
-        result = itertools.chain(result, generate_all(grammar,''))
+        grammar = eval(open(options.pwsfile, 'r').read())
+        result = itertools.chain(result, generate_all(grammar, ''))
 
     if options.pwqfile:
-        perms_tuple = eval(file(options.pwqfile, 'r').read())
+        perms_tuple = eval(open(options.pwqfile, 'r').read())
         result = itertools.chain(
-                result,
-                itertools.permutations(perms_tuple, options.k))
+            result,
+            itertools.permutations(perms_tuple, options.k))
         total = 1
-        for i in range(len(perms_tuple)-options.k, len(perms_tuple)):
+        for i in range(len(perms_tuple) - options.k, len(perms_tuple)):
             total *= i
         print("Total passwords to try: " + str(total))
-        print("Expected days at 500/s: %.5f" % ((((total/500.0)/60)/60)/24))
+        print("Expected days at 500/s: %.5f" % ((((total / 500.0) / 60) / 60) / 24))
 
     return result
+
 
 def __main__():
     w = tryopen(options.wallet)
@@ -126,7 +132,7 @@ def __main__():
         print("Wallet file not found! (-h for help)")
         exit(1)
 
-    if not(options.pw or options.pwfile or options.pwsfile or options.pwqfile):
+    if not (options.pw or options.pwfile or options.pwsfile or options.pwqfile):
         print("No passwords specified! (-h for help)")
         exit(1)
 
@@ -134,7 +140,7 @@ def __main__():
 
     try:
         Parallel(n_jobs=options.t)(
-                delayed(attempt)(w, pw, options.verbose) for pw in pwds())
+            delayed(attempt)(w, pw, options.verbose) for pw in pwds())
         print("None of the passwords worked.")
 
     except PasswordFoundException as e:
@@ -145,7 +151,8 @@ def __main__():
         sys.stdout.write('\a')
         sys.stdout.flush()
 
-    print("elapsed: " + str(time.time()-start))
+    print("elapsed: " + str(time.time() - start))
+
 
 if __name__ == "__main__":
     __main__()
